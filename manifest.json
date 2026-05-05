@@ -1,0 +1,17 @@
+{
+  "name": "Fuel Pro Araraquara",
+  "short_name": "Fuel Pro",
+  "description": "Economize combustível com inteligência em Araraquara.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/811/811252.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
