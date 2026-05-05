@@ -3,100 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fuel Pro Araraquara - Ultra</title>
+    <title>Fuel Pro Araraquara - Master</title>
+    
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#16a34a">
+    <meta name="theme-color" content="#0f172a">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
-        :root { --primary: #16a34a; --text: #1e293b; --bg-dim: rgba(15, 23, 42, 0.7); --danger: #ef4444; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; overflow: hidden; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
+        :root {
+            --primary: #16a34a;
+            --dark-bg: #0f172a;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --overlay: rgba(15, 23, 42, 0.7);
+        }
 
-        /* FABs */
-        .fab { position: absolute; z-index: 2000; background: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; border-radius: 18px; width: 56px; height: 56px; font-size: 24px; cursor: pointer; }
-        .btn-gps-fix { top: 20px; right: 20px; width: 52px; height: 52px; border-radius: 14px; z-index: 4000 !important; border: 2.1px solid var(--primary); }
-        #ranking-fab { bottom: 20px; left: 20px; background: var(--primary); color: white; }
-        #calc-fab    { bottom: 90px; left: 20px; }
-        #car-fab     { bottom: 160px; left: 20px; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--dark-bg); overflow: hidden; font-family: 'Inter', sans-serif; }
 
-        /* HEADER COM LOGO */
+        /* --- CONTAINER DO MAPA ARREDONDADO --- */
+        #map-container {
+            position: absolute; top: 12px; bottom: 12px; left: 12px; right: 12px;
+            border-radius: 35px; overflow: hidden; z-index: 1;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        #map { height: 100%; width: 100%; }
+
+        /* --- PAINEL STEALTH (CASCATA DA ESQUERDA) --- */
+        .control-panel {
+            position: absolute; bottom: 60px; left: 35px; z-index: 2000;
+            display: flex; flex-direction: column; gap: 12px;
+            pointer-events: none;
+        }
+
+        .btn-capsule {
+            background: var(--surface); border: none; padding: 15px 25px;
+            border-radius: 100px; font-size: 11px; font-weight: 800;
+            color: var(--text-main); text-transform: uppercase; letter-spacing: 1.2px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); cursor: pointer;
+            transform: translateX(-200%); opacity: 0;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: auto;
+        }
+
+        /* Efeito de visibilidade */
+        .panel-visible .btn-capsule { transform: translateX(0); opacity: 1; }
+        .btn-capsule:nth-child(1) { transition-delay: 0.1s; }
+        .btn-capsule:nth-child(2) { transition-delay: 0.2s; }
+        .btn-capsule:nth-child(3) { transition-delay: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+
+        .gps-trigger {
+            position: absolute; top: 35px; right: 35px; z-index: 2000;
+            background: white; border: 2.5px solid var(--primary);
+            padding: 12px 18px; border-radius: 16px; font-weight: 900;
+            font-size: 10px; color: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- MODAL E BLUR --- */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--overlay); z-index: 3000;
+            display: none; opacity: 0; backdrop-filter: blur(12px);
+            transition: opacity 0.3s ease;
+        }
+        .modal-bubble {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -40%) scale(0.85);
+            width: 90%; max-width: 360px; background: white;
+            z-index: 3100; border-radius: 35px; padding: 35px;
+            display: none; opacity: 0; flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-active #modal-overlay { display: block; opacity: 1; }
+        .modal-active .modal-bubble.show { display: flex; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* --- ELEMENTOS DO BALÃO (POPUP) --- */
         .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
         .brand-logo { width: 35px; height: 35px; object-fit: contain; }
-        .brand-name { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
-
-        /* BADGES E ESTRELAS */
         .badge-trust { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
         .trust-high { background: #dcfce7; color: #166534; }
-        .trust-low { background: #fee2e2; color: #991b1b; }
         .rating-stars { color: #fbbf24; font-size: 14px; margin-bottom: 8px; }
+        .p-row { display: flex; justify-content: space-between; font-size: 18px; margin: 8px 0; }
+        .p-row strong { color: var(--primary); font-weight: 900; }
+        .update-time { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 10px; font-style: italic; }
 
-        /* POPUP */
-        .leaflet-popup-content-wrapper { width: 82vw; max-width: 300px; border-radius: 22px; padding: 10px; border: 2.5px solid var(--primary); }
-        .p-row { display: flex; justify-content: space-between; font-size: 17px; margin: 8px 0; }
-        .p-row strong { color: var(--primary); }
-        .update-time { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 5px; font-style: italic; }
-
-        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        .btn-edit-price { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 12px; border-radius: 12px; margin-top: 8px; font-size: 12px; font-weight: bold; }
-
-        /* MODAIS */
-        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dim); z-index: 3000; display: none; backdrop-filter: blur(5px); }
-        .modal-bubble { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 360px; background: white; z-index: 3100; border-radius: 28px; padding: 25px; display: none; flex-direction: column; box-sizing: border-box; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #ddd; font-size: 18px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 18px; border-radius: 18px; border: none; background: var(--primary); color: white; font-weight: 800; text-transform: uppercase; margin-top: 10px; cursor: pointer; }
+        .btn-sub { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 12px; border-radius: 14px; margin-top: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        
+        input { width: 100%; padding: 18px; margin-bottom: 15px; border-radius: 18px; border: 2px solid #f1f5f9; font-size: 18px; box-sizing: border-box; }
+        .leaflet-popup-content-wrapper { border-radius: 30px; padding: 12px; border: 2.5px solid var(--primary); }
     </style>
 </head>
-<body>
+<body id="main-body">
 
     <div id="modal-overlay" onclick="closeAll()"></div>
-    <button class="fab btn-gps-fix" onclick="locateMe()">🎯</button>
-    <button id="car-fab" class="fab" onclick="openModal('modal-car')">🚗</button>
-    <button id="calc-fab" class="fab" onclick="openModal('modal-calc')">🧮</button>
-    <button id="ranking-fab" class="fab" onclick="alert('Ranking carregado!')">🏆</button>
+
+    <button class="gps-trigger" onclick="locateMe()">LOCALIZAR 🎯</button>
+
+    <div class="control-panel" id="stealth-panel">
+        <button class="btn-capsule" onclick="openModal('modal-car')">VEÍCULO</button>
+        <button class="btn-capsule" onclick="openModal('modal-calc')">CALCULADORA</button>
+        <button class="btn-capsule btn-primary" onclick="alert('Ranking de Araraquara Atualizado!')">RANKING</button>
+    </div>
     
-    <div id="map"></div>
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+
+    <div id="modal-car" class="modal-bubble">
+        <h2 style="text-align:center; margin:0 0 20px 0;">MEU CONSUMO</h2>
+        <input type="number" id="cfg-eth" placeholder="Etanol (km/l)">
+        <input type="number" id="cfg-gas" placeholder="Gasolina (km/l)">
+        <button class="btn-action" onclick="saveSettings()">SALVAR NO CELULAR</button>
+    </div>
+
+    <div id="modal-calc" class="modal-bubble">
+        <h2 style="text-align:center; margin:0 0 20px 0;">FLEX CALC</h2>
+        <input type="number" id="p-eth" placeholder="Etanol R$">
+        <input type="number" id="p-gas" placeholder="Gasolina R$">
+        <button class="btn-action" onclick="runSmartCalc()">QUAL COMPENSA?</button>
+        <div id="calc-res" style="margin-top:15px; text-align:center; font-weight:bold; color:var(--primary); font-size:18px;"></div>
+    </div>
 
     <div id="modal-edit" class="modal-bubble">
-        <h2 id="edit-title" style="margin:0; text-align:center;">Atualizar Preço</h2>
-        <p id="gps-status" style="font-size:11px; color:red; text-align:center; margin-bottom:10px; font-weight:bold;">Validando GPS...</p>
+        <h2 id="edit-title" style="text-align:center; margin:0 0 10px 0;">POSTO</h2>
+        <p id="gps-status" style="font-size:11px; color:red; text-align:center; margin-bottom:15px; font-weight:bold;">VALIDANDO GPS...</p>
         <input type="number" id="new-eth" step="0.01" placeholder="Etanol R$">
         <input type="number" id="new-gas" step="0.01" placeholder="Gasolina R$">
-        <button class="btn-main" id="btn-save-price" onclick="confirmUpdate()">SALVAR NOVO PREÇO</button>
-        <button onclick="closeAll()" style="background:none; border:none; color:#999; margin-top:10px; width:100%;">Sair</button>
+        <button class="btn-action" id="btn-save-price" onclick="confirmUpdate()">ATUALIZAR PREÇO</button>
+        <button onclick="closeAll()" style="background:none; border:none; color:#999; margin-top:15px; width:100%;">SAIR</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map', {zoomControl: false}).setView([-21.7850, -48.1750], 13);
+        const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-21.7850, -48.1750], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        let currentStation = null, userPos = null;
+        let currentStation = null, userPos = null, hideTimeout;
 
         const L_SHELL = "https://cdn.freebiesupply.com/logos/large/2x/shell-logo-png-transparent.png";
         const L_IPIRANGA = "https://logodownload.org/wp-content/uploads/2014/05/ipiranga-logo-9.png";
         const L_BR = "https://logodownload.org/wp-content/uploads/2014/05/petrobras-br-logo-2.png";
         const L_GENERIC = "https://cdn-icons-png.flaticon.com/512/483/483497.png";
 
-        const postos = [
-            { id: 1, nome: "Posto Shell - Bento de Abreu", lat: -21.7836, lng: -48.1755, gas: 5.69, eth: 3.39, nota: 4.8, verificado: true, logo: L_SHELL, lastUpdate: "04/05/2026 10:00" },
-            { id: 2, nome: "Posto Ipiranga - Via Expressa", lat: -21.7945, lng: -48.1682, gas: 5.55, eth: 3.25, nota: 4.5, verificado: true, logo: L_IPIRANGA, lastUpdate: "04/05/2026 09:30" },
-            { id: 3, nome: "Posto BR - Vila Xavier", lat: -21.7982, lng: -48.1610, gas: 5.75, eth: 3.45, nota: 4.2, verificado: true, logo: L_BR, lastUpdate: "03/05/2026 18:15" },
-            { id: 4, nome: "Posto Shell - Alameda", lat: -21.7712, lng: -48.1825, gas: 5.65, eth: 3.35, nota: 4.7, verificado: true, logo: L_SHELL, lastUpdate: "04/05/2026 11:20" },
-            { id: 5, nome: "Posto Monte Carlo", lat: -21.7655, lng: -48.1688, gas: 5.59, eth: 3.29, nota: 4.6, verificado: true, logo: L_IPIRANGA, lastUpdate: "04/05/2026 08:45" },
-            { id: 6, nome: "Posto Jd. das Estações", lat: -21.8050, lng: -48.1550, gas: 5.49, eth: 3.19, nota: 3.2, verificado: false, logo: L_GENERIC, lastUpdate: "04/05/2026 12:00" },
-            { id: 7, nome: "Posto Extra", lat: -21.7890, lng: -48.1590, gas: 5.52, eth: 3.22, nota: 4.0, verificado: true, logo: L_GENERIC, lastUpdate: "04/05/2026 07:10" },
-            { id: 8, nome: "Posto Graal - Rodovia", lat: -21.8250, lng: -48.1880, gas: 5.99, eth: 3.69, nota: 4.9, verificado: true, logo: L_BR, lastUpdate: "04/05/2026 06:00" }
+        let postos = [
+            { id: 1, nome: "Posto Shell - Bento de Abreu", lat: -21.7836, lng: -48.1755, gas: 5.69, eth: 3.39, nota: 4.8, verificado: true, logo: L_SHELL, lastUpdate: "05/05/2026 00:00" },
+            { id: 2, nome: "Posto Ipiranga - Via Expressa", lat: -21.7945, lng: -48.1682, gas: 5.55, eth: 3.25, nota: 4.5, verificado: true, logo: L_IPIRANGA, lastUpdate: "05/05/2026 00:00" },
+            { id: 3, nome: "Posto BR - Vila Xavier", lat: -21.7982, lng: -48.1610, gas: 5.75, eth: 3.45, nota: 4.2, verificado: true, logo: L_BR, lastUpdate: "05/05/2026 00:00" },
+            { id: 4, nome: "Posto Shell - Alameda", lat: -21.7712, lng: -48.1825, gas: 5.65, eth: 3.35, nota: 4.7, verificado: true, logo: L_SHELL, lastUpdate: "05/05/2026 00:00" },
+            { id: 5, nome: "Posto Monte Carlo", lat: -21.7655, lng: -48.1688, gas: 5.59, eth: 3.29, nota: 4.6, verificado: true, logo: L_IPIRANGA, lastUpdate: "05/05/2026 00:00" },
+            { id: 6, nome: "Posto Jd. das Estações", lat: -21.8050, lng: -48.1550, gas: 5.49, eth: 3.19, nota: 3.2, verificado: false, logo: L_GENERIC, lastUpdate: "05/05/2026 00:00" },
+            { id: 7, nome: "Posto Extra", lat: -21.7890, lng: -48.1590, gas: 5.52, eth: 3.22, nota: 4.0, verificado: true, logo: L_GENERIC, lastUpdate: "05/05/2026 00:00" },
+            { id: 8, nome: "Posto Graal - Rodovia", lat: -21.8250, lng: -48.1880, gas: 5.99, eth: 3.69, nota: 4.9, verificado: true, logo: L_BR, lastUpdate: "05/05/2026 00:00" }
         ];
 
-        // PINOS COLORIDOS
-        const gIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
-        const yIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
-        const rIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+        const iconG = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+        const iconY = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+        const iconR = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', iconSize: [25, 41], iconAnchor: [12, 41] });
 
         function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3; 
+            const R = 6371e3;
             const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
+        function loadMemory() {
+            const saved = localStorage.getItem('fuel_pro_master');
+            if(saved) {
+                const parsed = JSON.parse(saved);
+                postos.forEach(p => {
+                    const match = parsed.find(s => s.id === p.id);
+                    if(match) { p.eth = match.eth; p.gas = match.gas; p.lastUpdate = match.lastUpdate; }
+                });
+            }
+            document.getElementById('cfg-eth').value = localStorage.getItem('avg_eth') || 7.5;
+            document.getElementById('cfg-gas').value = localStorage.getItem('avg_gas') || 10.5;
         }
 
         function renderMarkers() {
@@ -105,37 +187,57 @@
             const minP = Math.min(...prices), maxP = Math.max(...prices);
 
             postos.forEach(p => {
-                let pIcon = yIcon;
-                if (p.eth === minP) pIcon = gIcon;
-                if (p.eth === maxP) pIcon = rIcon;
+                let pIcon = iconY;
+                if (p.eth === minP) pIcon = iconG;
+                if (p.eth === maxP) pIcon = iconR;
 
-                const trust = p.verificado ? `<span class="badge-trust trust-high">✓ Verificado ANP</span>` : `<span class="badge-trust trust-low">⚠ Sem Selo</span>`;
                 const marker = L.marker([p.lat, p.lng], {icon: pIcon}).addTo(map);
                 const content = `
-                    <div class="popup-info">
+                    <div style="min-width:240px;">
                         <div class="brand-header">
                             <img src="${p.logo}" class="brand-logo" onerror="this.src='${L_GENERIC}'">
-                            <h4 class="brand-name">${p.nome.split(' - ')[0]}</h4>
+                            <h4 style="margin:0;">${p.nome.split(' - ')[0]}</h4>
                         </div>
-                        ${trust}
+                        ${p.verificado ? '<span class="badge-trust trust-high">✓ Verificado ANP</span>' : ''}
                         <div class="rating-stars">★ ${p.nota}</div>
-                        <div class="p-row">Etanol: <strong>R$ ${p.eth.toFixed(2)}</strong></div>
-                        <div class="p-row">Gasolina: <strong>R$ ${p.gas.toFixed(2)}</strong></div>
-                        <div class="update-time">🕒 ${p.lastUpdate}</div>
-                        <button class="btn-main" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}')">ABRIR ROTA</button>
-                        <button class="btn-edit-price" onclick="openEdit(${p.id})">✎ ATUALIZAR PREÇO</button>
+                        <div class="p-row">ETANOL: <strong>R$ ${p.eth.toFixed(2)}</strong></div>
+                        <div class="p-row">GASOLINA: <strong>R$ ${p.gas.toFixed(2)}</strong></div>
+                        <div class="update-time">🕒 Atualizado: ${p.lastUpdate}</div>
+                        <button class="btn-action" style="padding:12px; font-size:12px;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}')">INICIAR ROTA</button>
+                        <button class="btn-sub" onclick="openEdit(${p.id})">✎ ATUALIZAR PREÇO</button>
                     </div>
                 `;
-                marker.bindPopup(content, { minWidth: 260 });
+                marker.bindPopup(content);
             });
         }
 
-        function openModal(id) { document.getElementById('modal-overlay').style.display = 'block'; document.getElementById(id).style.display = 'flex'; }
-        function closeAll() { document.querySelectorAll('.modal-bubble').forEach(m => m.style.display = 'none'); document.getElementById('modal-overlay').style.display = 'none'; }
+        // --- INTERFACE STEALTH ---
+        map.on('click', function() {
+            const panel = document.getElementById('stealth-panel');
+            panel.classList.add('panel-visible');
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => { panel.classList.remove('panel-visible'); }, 5000);
+        });
+
+        function openModal(id) {
+            const body = document.getElementById('main-body');
+            const modal = document.getElementById(id);
+            body.classList.add('modal-active');
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.classList.add('show'); }, 10);
+        }
+
+        function closeAll() {
+            const body = document.getElementById('main-body');
+            const modals = document.querySelectorAll('.modal-bubble');
+            modals.forEach(m => { m.classList.remove('show'); });
+            body.classList.remove('modal-active');
+            setTimeout(() => { modals.forEach(m => m.style.display = 'none'); }, 300);
+        }
         
         function openEdit(id) {
             currentStation = postos.find(p => p.id === id);
-            document.getElementById('edit-title').innerText = currentStation.nome;
+            document.getElementById('edit-title').innerText = currentStation.nome.split(' - ')[0];
             document.getElementById('new-eth').value = currentStation.eth;
             document.getElementById('new-gas').value = currentStation.gas;
             locateMe(); openModal('modal-edit'); checkGpsStatus();
@@ -143,21 +245,44 @@
 
         function checkGpsStatus() {
             const s = document.getElementById('gps-status'), b = document.getElementById('btn-save-price');
-            if(!userPos) { s.innerText = "⚠️ Aguardando GPS..."; s.style.color = "red"; b.disabled = true; b.style.opacity = "0.5"; }
-            else { s.innerText = "✅ GPS OK."; s.style.color = "green"; b.disabled = false; b.style.opacity = "1"; }
+            if(!userPos) { s.innerText = "⚠️ AGUARDANDO GPS..."; s.style.color = "red"; b.disabled = true; b.style.opacity = "0.5"; }
+            else { s.innerText = "✅ GPS VALIDADO"; s.style.color = "green"; b.disabled = false; b.style.opacity = "1"; }
         }
 
         function confirmUpdate() {
             const eth = parseFloat(document.getElementById('new-eth').value), gas = parseFloat(document.getElementById('new-gas').value);
-            const agora = new Date();
-            currentStation.eth = eth; currentStation.gas = gas;
-            currentStation.lastUpdate = agora.toLocaleDateString('pt-BR') + " " + agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            const dist = getDistance(userPos.lat, userPos.lng, currentStation.lat, currentStation.lng);
+            
+            if(dist > 150) { alert("❌ BLOQUEADO: Você precisa estar no posto para atualizar!"); return; }
+            
+            const agora = new Date().toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+            currentStation.eth = eth; currentStation.gas = gas; currentStation.lastUpdate = agora;
+            
+            localStorage.setItem('fuel_pro_master', JSON.stringify(postos));
             renderMarkers(); closeAll();
+            alert("✅ Preço atualizado com sucesso!");
+        }
+
+        function saveSettings() {
+            localStorage.setItem('avg_eth', document.getElementById('cfg-eth').value);
+            localStorage.setItem('avg_gas', document.getElementById('cfg-gas').value);
+            closeAll(); alert("Configs Salvas!");
+        }
+
+        function runSmartCalc() {
+            const pe = parseFloat(document.getElementById('p-eth').value), pg = parseFloat(document.getElementById('p-gas').value);
+            const me = parseFloat(localStorage.getItem('avg_eth')) || 7.5, mg = parseFloat(localStorage.getItem('avg_gas')) || 10.5;
+            if(pe && pg) document.getElementById('calc-res').innerText = (pe/me < pg/mg) ? "🌿 VÁ DE ETANOL!" : "⛽ VÁ DE GASOLINA!";
         }
 
         function locateMe() { map.locate({setView: true, maxZoom: 16}); }
-        map.on('locationfound', (e) => { userPos = e.latlng; L.circleMarker(e.latlng, {radius: 8, color: '#16a34a'}).addTo(map); if(document.getElementById('modal-edit').style.display === 'flex') checkGpsStatus(); });
+        map.on('locationfound', (e) => { 
+            userPos = e.latlng; 
+            L.circleMarker(e.latlng, {radius: 8, color: '#16a34a'}).addTo(map); 
+            if(document.getElementById('modal-edit').style.display === 'flex') checkGpsStatus();
+        });
 
+        loadMemory();
         renderMarkers();
     </script>
 </body>
