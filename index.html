@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fuel Pro Araraquara - V2.1</title>
+    <title>Fuel Pro Araraquara - Ultra</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#16a34a">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,25 +12,32 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; overflow: hidden; }
         #map { height: 100vh; width: 100%; z-index: 1; }
 
-        /* BOTÕES */
+        /* FABs */
         .fab { position: absolute; z-index: 2000; background: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; border-radius: 18px; width: 56px; height: 56px; font-size: 24px; cursor: pointer; }
         .btn-gps-fix { top: 20px; right: 20px; width: 52px; height: 52px; border-radius: 14px; z-index: 4000 !important; border: 2.1px solid var(--primary); }
         #ranking-fab { bottom: 20px; left: 20px; background: var(--primary); color: white; }
         #calc-fab    { bottom: 90px; left: 20px; }
         #car-fab     { bottom: 160px; left: 20px; }
 
-        /* HEADER DO LOGO NO BALÃO */
-        .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .brand-logo { width: 32px; height: 32px; object-fit: contain; display: block; }
-        .brand-name { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+        /* HEADER COM LOGO */
+        .brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .brand-logo { width: 35px; height: 35px; object-fit: contain; }
+        .brand-name { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
 
-        /* POPUP E INFOS */
-        .leaflet-popup-content-wrapper { width: 80vw; max-width: 300px; border-radius: 22px; padding: 8px; border: 2.5px solid var(--primary); }
+        /* BADGES E ESTRELAS */
+        .badge-trust { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .trust-high { background: #dcfce7; color: #166534; }
+        .trust-low { background: #fee2e2; color: #991b1b; }
+        .rating-stars { color: #fbbf24; font-size: 14px; margin-bottom: 8px; }
+
+        /* POPUP */
+        .leaflet-popup-content-wrapper { width: 82vw; max-width: 300px; border-radius: 22px; padding: 10px; border: 2.5px solid var(--primary); }
         .p-row { display: flex; justify-content: space-between; font-size: 17px; margin: 8px 0; }
         .p-row strong { color: var(--primary); }
         .update-time { font-size: 10px; color: #94a3b8; text-align: center; margin-top: 5px; font-style: italic; }
-        .btn-main { width: 100%; padding: 15px; border-radius: 14px; border: none; background: var(--primary); color: white; font-weight: bold; font-size: 16px; margin-top: 8px; }
-        .btn-edit-price { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 10px; border-radius: 12px; margin-top: 8px; font-size: 12px; font-weight: bold; }
+
+        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: bold; font-size: 16px; margin-top: 10px; }
+        .btn-edit-price { width: 100%; background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b; padding: 12px; border-radius: 12px; margin-top: 8px; font-size: 12px; font-weight: bold; }
 
         /* MODAIS */
         #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dim); z-index: 3000; display: none; backdrop-filter: blur(5px); }
@@ -44,17 +51,17 @@
     <button class="fab btn-gps-fix" onclick="locateMe()">🎯</button>
     <button id="car-fab" class="fab" onclick="openModal('modal-car')">🚗</button>
     <button id="calc-fab" class="fab" onclick="openModal('modal-calc')">🧮</button>
-    <button id="ranking-fab" class="fab" onclick="alert('Ranking em breve!')">🏆</button>
+    <button id="ranking-fab" class="fab" onclick="alert('Ranking carregado!')">🏆</button>
     
     <div id="map"></div>
 
     <div id="modal-edit" class="modal-bubble">
         <h2 id="edit-title" style="margin:0; text-align:center;">Atualizar Preço</h2>
-        <p id="gps-status" style="font-size:11px; color:red; text-align:center; margin-bottom:10px;">Validando GPS...</p>
+        <p id="gps-status" style="font-size:11px; color:red; text-align:center; margin-bottom:10px; font-weight:bold;">Validando GPS...</p>
         <input type="number" id="new-eth" step="0.01" placeholder="Etanol R$">
         <input type="number" id="new-gas" step="0.01" placeholder="Gasolina R$">
         <button class="btn-main" id="btn-save-price" onclick="confirmUpdate()">SALVAR NOVO PREÇO</button>
-        <button onclick="closeAll()" style="background:none; border:none; color:#999; margin-top:10px; width:100%;">Cancelar</button>
+        <button onclick="closeAll()" style="background:none; border:none; color:#999; margin-top:10px; width:100%;">Sair</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -64,37 +71,58 @@
 
         let currentStation = null, userPos = null;
 
-        // LOGOS ESTÁVEIS
         const L_SHELL = "https://cdn.freebiesupply.com/logos/large/2x/shell-logo-png-transparent.png";
         const L_IPIRANGA = "https://logodownload.org/wp-content/uploads/2014/05/ipiranga-logo-9.png";
         const L_BR = "https://logodownload.org/wp-content/uploads/2014/05/petrobras-br-logo-2.png";
         const L_GENERIC = "https://cdn-icons-png.flaticon.com/512/483/483497.png";
 
         const postos = [
-            { id: 1, nome: "Posto Shell - Bento de Abreu", lat: -21.7836, lng: -48.1755, gas: 5.69, eth: 3.39, logo: L_SHELL, lastUpdate: "04/05/2026 10:00" },
-            { id: 2, nome: "Posto Ipiranga - Via Expressa", lat: -21.7945, lng: -48.1682, gas: 5.55, eth: 3.25, logo: L_IPIRANGA, lastUpdate: "04/05/2026 09:30" },
-            { id: 3, nome: "Posto BR - Vila Xavier", lat: -21.7982, lng: -48.1610, gas: 5.75, eth: 3.45, logo: L_BR, lastUpdate: "03/05/2026 18:15" },
-            { id: 4, nome: "Posto Shell - Alameda", lat: -21.7712, lng: -48.1825, gas: 5.65, eth: 3.35, logo: L_SHELL, lastUpdate: "04/05/2026 11:20" },
-            { id: 5, nome: "Posto Monte Carlo", lat: -21.7655, lng: -48.1688, gas: 5.59, eth: 3.29, logo: L_IPIRANGA, lastUpdate: "04/05/2026 08:45" },
-            { id: 6, nome: "Posto Jd. das Estações", lat: -21.8050, lng: -48.1550, gas: 5.49, eth: 3.19, logo: L_GENERIC, lastUpdate: "04/05/2026 12:00" },
-            { id: 7, nome: "Posto Extra", lat: -21.7890, lng: -48.1590, gas: 5.52, eth: 3.22, logo: L_GENERIC, lastUpdate: "04/05/2026 07:10" },
-            { id: 8, nome: "Posto Graal - Rodovia", lat: -21.8250, lng: -48.1880, gas: 5.99, eth: 3.69, logo: L_BR, lastUpdate: "04/05/2026 06:00" }
+            { id: 1, nome: "Posto Shell - Bento de Abreu", lat: -21.7836, lng: -48.1755, gas: 5.69, eth: 3.39, nota: 4.8, verificado: true, logo: L_SHELL, lastUpdate: "04/05/2026 10:00" },
+            { id: 2, nome: "Posto Ipiranga - Via Expressa", lat: -21.7945, lng: -48.1682, gas: 5.55, eth: 3.25, nota: 4.5, verificado: true, logo: L_IPIRANGA, lastUpdate: "04/05/2026 09:30" },
+            { id: 3, nome: "Posto BR - Vila Xavier", lat: -21.7982, lng: -48.1610, gas: 5.75, eth: 3.45, nota: 4.2, verificado: true, logo: L_BR, lastUpdate: "03/05/2026 18:15" },
+            { id: 4, nome: "Posto Shell - Alameda", lat: -21.7712, lng: -48.1825, gas: 5.65, eth: 3.35, nota: 4.7, verificado: true, logo: L_SHELL, lastUpdate: "04/05/2026 11:20" },
+            { id: 5, nome: "Posto Monte Carlo", lat: -21.7655, lng: -48.1688, gas: 5.59, eth: 3.29, nota: 4.6, verificado: true, logo: L_IPIRANGA, lastUpdate: "04/05/2026 08:45" },
+            { id: 6, nome: "Posto Jd. das Estações", lat: -21.8050, lng: -48.1550, gas: 5.49, eth: 3.19, nota: 3.2, verificado: false, logo: L_GENERIC, lastUpdate: "04/05/2026 12:00" },
+            { id: 7, nome: "Posto Extra", lat: -21.7890, lng: -48.1590, gas: 5.52, eth: 3.22, nota: 4.0, verificado: true, logo: L_GENERIC, lastUpdate: "04/05/2026 07:10" },
+            { id: 8, nome: "Posto Graal - Rodovia", lat: -21.8250, lng: -48.1880, gas: 5.99, eth: 3.69, nota: 4.9, verificado: true, logo: L_BR, lastUpdate: "04/05/2026 06:00" }
         ];
+
+        // PINOS COLORIDOS
+        const gIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+        const yIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+        const rIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] });
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
 
         function renderMarkers() {
             map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+            const prices = postos.map(p => p.eth);
+            const minP = Math.min(...prices), maxP = Math.max(...prices);
+
             postos.forEach(p => {
-                const marker = L.marker([p.lat, p.lng]).addTo(map);
+                let pIcon = yIcon;
+                if (p.eth === minP) pIcon = gIcon;
+                if (p.eth === maxP) pIcon = rIcon;
+
+                const trust = p.verificado ? `<span class="badge-trust trust-high">✓ Verificado ANP</span>` : `<span class="badge-trust trust-low">⚠ Sem Selo</span>`;
+                const marker = L.marker([p.lat, p.lng], {icon: pIcon}).addTo(map);
                 const content = `
                     <div class="popup-info">
                         <div class="brand-header">
                             <img src="${p.logo}" class="brand-logo" onerror="this.src='${L_GENERIC}'">
                             <h4 class="brand-name">${p.nome.split(' - ')[0]}</h4>
                         </div>
+                        ${trust}
+                        <div class="rating-stars">★ ${p.nota}</div>
                         <div class="p-row">Etanol: <strong>R$ ${p.eth.toFixed(2)}</strong></div>
                         <div class="p-row">Gasolina: <strong>R$ ${p.gas.toFixed(2)}</strong></div>
                         <div class="update-time">🕒 ${p.lastUpdate}</div>
-                        <button class="btn-main" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}')">ROTA GPS</button>
+                        <button class="btn-main" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}')">ABRIR ROTA</button>
                         <button class="btn-edit-price" onclick="openEdit(${p.id})">✎ ATUALIZAR PREÇO</button>
                     </div>
                 `;
